@@ -1,29 +1,34 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
-contract bank_account {
-    mapping(address => uint256) public user_balance;
-    mapping(address => bool) public is_user;
+contract BankAccount {
+    address public owner;
+    mapping(address => uint256) balances;
 
-    function create_account() public {
-        require(is_user[msg.sender] == false, "Account already exist");
-        is_user[msg.sender] = true;
+    constructor() {
+        owner = msg.sender;
+    }                                                                                                                                                                                                                                                                       
+                                                                          
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can perform this operation");
+        _;
     }
 
     function deposit() public payable {
-        require(is_user[msg.sender], "User Account Not Found");
-        user_balance[msg.sender] += msg.value;
+        require(msg.value > 0, "Deposit amount must be greater than 0");
+        balances[msg.sender] += msg.value;
     }
 
     function withdraw(uint256 amount) public {
-        require(is_user[msg.sender], "User Account Not Found");
-        require(user_balance[msg.sender] >= amount, "You don't have enough balance to withdraw");
-        require(payable(msg.sender).send(amount));
-        user_balance[msg.sender] -= amount;
+        require(balances[msg.sender] >= amount, "Insufficient balance");
+        balances[msg.sender] -= amount;
+        payable(msg.sender).transfer(amount);
     }
 
-    function show_balance(address user) public view returns (uint256) {
-        require(is_user[user], "User Account Not Found");
-        return (user_balance[user]);
+    function getBalance() public view returns (uint256) {
+        return balances[msg.sender];
+    }
+
+    function getContractBalance() public view onlyOwner returns (uint256) {
+        return address(this).balance;
     }
 }
